@@ -4,7 +4,7 @@
   "description": "Mintbean Take-Home Test",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon ./index.js --exec babel-node -e js",
+    "start": "node ./index.js",
     "test": "set DEBUG=* & nodemon ./index.js --exec babel-node -e js"
   },
   "author": "Wynn",
