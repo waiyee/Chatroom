@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Chatroom</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <style>
+      form {padding:10px 20px; width: 100%;}
+      #messages{ margin:10px 5px; padding:0; width: 100%;}
+      .own {background-color: aquamarine;}
+      .like-btn.disabled{pointer-events: none;text-decoration: none;}
+      .like-btn{width: 100px;}
+      .fixed-top, .fixed-bottom{background-color: white;}
+    </style>
+  </head>
+  <body>
+    
+      <div class="fixed-top sticky-top">
+        <nav class="nav">
+          <a class="nav-link disabled" href="#">Hello! <%= username%>  </aclass="nav-link">
+          <a class="nav-link" id="signout" href="/user/signout">Sign Out</a>
+        </nav>  
+        <form action="">
+          <div class="input-group mb-3">
+            <input id="m" autocomplete="off" type="text" class="form-control" placeholder="Message" aria-label="Message" aria-describedby="button-addon2">
+            <div class="input-group-prepend">
+              <button class="btn btn-light" type="submit" id="button-addon2">Send</button>
+            </div>
+          </div>
+
+        </form>   
+      </div>  
+      
+      
+      <div class="container-fluid overflow-auto">  
+        <div id="messages" class=""></div>
+      </div>
+
+
+  <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+      <script src="/socket.io/socket.io.js"></script>
+      <script>
+        function formatDate(date) {
+            var d = new Date(date),
+                month = '' + (d.getMonth() + 1),
+                day = '' + d.getDate(),
+                year =  d.getFullYear(), 
+                hour = '' + d.getHours(), 
+                min = ''+ d.getMinutes()
+                ;
+
+            if (month.length < 2) 
+                month = '0' + month;
+            if (day.length < 2) 
+                day = '0' + day;
+            if (hour.length < 2) 
+                hour = '0' + hour;
+            if (min.length < 2) 
+                min = '0' + min;
+                
+            return [year, month, day].join('-') + " " + [hour, min].join(':');
+        }
+        function click_evt(){
+          $(this).addClass('disabled');
+          $(this).attr('aria-disabled' , "true");
+          $(this).text('Liked');
+          let msg_id = $(this).parent().attr('id').split("_")[2];
+          socket.emit('like', {room:room, username:cur_username, msg_id:msg_id} );
+          $(this).off();
+          localStorage.setItem('messages', $('#messages').html());
+        }
+        $( document ).ready(()=> {
+          $("#messages").html(localStorage.getItem('messages'));
+          $(".like-btn").click(click_evt);
+          $(".like-btn .disabled").off();
+        });
+        
+        const room = 'chatroom';
+        const cur_username = '<%=username%>';
+        const socket = io('/tech');
+        
+        $('form').submit(()=>{
+          let msg = $("#m").val();
+          socket.emit('message', {msg, room, username: cur_username} );
+          $("#m").val("");
+          return false;
+        });    
+        
+        $('#signout').click(()=>{
+          localStorage.removeItem('messages');
+        });
+
+        socket.on('connect', ()=> {         
+          socket.emit('join', {room: room, username: cur_username});
+        });
+
+        socket.on('like', (data)=>{
+          let like_by = data.username;
+          if (data.username == cur_username) { 
+            like_by = "you" ;      
+          }
+          console.log(like_by)
+          if ($("#msg_id_"+ data.msg_id + " > .liked-list").length){
+              const t = $('#msg_id_'+data.msg_id + " > .liked-list:eq(0)").text();
+              $('#msg_id_'+data.msg_id + " .liked-list:eq(0)").text(t + ', ' + like_by);
+            }else{       
+              $('#msg_id_'+data.msg_id).append('<div class="liked-list">Liked by ' + like_by + '</div>');              
+            }
+          localStorage.setItem('messages', $('#messages').html());  
+        });
+
+        socket.on('message', (data)=>{
+          let d= new Date();
+          d = formatDate(d);
+          let master = $('<div></div>');
+          master.addClass('card');
+          master.attr('id', 'msg_id_'+data.msg_id);
+          let child_user = $('<div></div>');
+          child_user.addClass('card-title');
+          child_user.text(data.username);
+          if (data.username == cur_username){
+            master.addClass('own');
+          }
+          let child_msg = $('<div></div>');
+          child_msg.addClass('card-text');
+          child_msg.text(data.msg);
+          let child_date = $('<div></div>');
+          child_date.addClass('text-muted');
+          child_date.text(d);
+          let child_btn = $('<a></a>');
+          child_btn.addClass('card-link like-btn');
+          child_btn.attr('href', '#');
+          child_btn.text('Like');
+
+          child_btn.click(click_evt);
+
+          master.append([child_user, child_msg, child_date, child_btn]);
+          
+          $('#messages').prepend(master);
+
+          localStorage.setItem('messages', $('#messages').html());
+
+        })
+    </script>
+  </body>
+</html> 

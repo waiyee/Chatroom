@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Chatroom Sign Up</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+</head>
+<body>
+<div class="jumbotron jumbotron-fluid ">
+    <div class="container">
+    <h1 class="display-4">Sign Up to enter the chatroom</h1>
+    <p class="lead">Please sign up</p>
+    </div>
+    
+</div>
+
+<form action="user/signup" method="POST" id="signupForm">
+    <div class="container-fluid">
+        <div class="form-group row">
+            <label for="inputUsername" class="col-sm-2 col-form-label">User Name</label>
+            <div class="col-sm-10">
+                <input type="text" id="username" class="form-control" placeholder="username" aria-label="username" aria-describedby="button-addon1">
+            </div>
+
+            <label for="inputPassword" class="col-sm-2 col-form-label">Password</label>
+            <div class="col-sm-10">
+            <input type="password" id="password" class="form-control" placeholder="password" aria-label="password" aria-describedby="button-addon1">
+            </div>
+
+            
+            <div class="col-sm-10">
+                <input class="btn btn-primary" type="submit" value="Sign Up" id="button-addon1"/>
+            </div>  
+            
+        </div>
+    </div>
+    <div class="alert alert-danger" style="display: none;" id="error" role="alert">
+        
+    </div>
+</form>
+
+<script
+  src="https://code.jquery.com/jquery-3.4.1.min.js"
+  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+  crossorigin="anonymous"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+ <script>
+     $('form').submit((event) => {
+        event.preventDefault();
+      
+      
+        $.ajax({
+            type: "POST",
+            url: "user/signup",
+            data: JSON.stringify({username: $("#username").val(), password: $("#password").val()}),
+            dataType: "json",
+            contentType : "application/json"
+            })
+            .fail((data)=>{
+               
+                let error = data.responseJSON;
+                $("#error").text("");
+                $("#error").show();
+                if ($.isEmptyObject(error.msg)){
+                    error = error.errors;
+                    $.each( error, function( key, value ) {
+                        console.log(value);
+                        $("#error").show();
+                        $("#error").append(value.msg + "<br/>");
+                        
+                    });
+                }else{                    
+                    $("#error").append(error.msg);
+                }
+
+             
+                
+            })
+            .done(()=>{
+                $("#error").hide();
+                window.location =  
+                "user/chatroom"; 
+            });
+        
+
+      });
+ </script>
+
+</body>
+</html> 
